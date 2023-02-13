@@ -42,7 +42,7 @@
     - DB_HOST=localhost
     - DB_PORT=3308
     - DB_DATABASE=timesheet
-    - DB_USERNAME=timesheet
+    - DB_USERNAME=root
     - DB_PASSWORD=timesheet
     
 
