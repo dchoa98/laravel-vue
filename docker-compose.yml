@@ -32,7 +32,7 @@ services:
         GIT_COMMIT_HASH: N/A
         GIT_BRANCH_NAME: N/A
     ports:
-      - 8080:80
+      - 9000:80
     restart: always
     depends_on:
       - timesheet_app
