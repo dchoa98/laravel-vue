@@ -7,17 +7,17 @@
 #     docker-compose config
 version: "3.7"
 services:
-  timesheet_app:
-    working_dir: /var/www/html/timesheet
+  mirai_app:
+    working_dir: /var/www/html/mirai_test
     user: "$uid"
-    image: timesheet-php-fpm-dev
+    image: mirai-php-fpm-dev
     build:
       target: php-fpm-dev
       args:
         USER_ID: ${uid:-1000}
         GROUP_ID: ${gid:-1000}
     volumes:
-      - .:/var/www/html/timesheet:delegated
+      - .:/var/www/html/mirai_test:delegated
       - .docker/php/conf.d/z-xdebug.dev.ini:/usr/local/etc/php/conf.d/z-xdebug.dev.ini
       - .docker/php/conf.d/z-php.dev.ini:/usr/local/etc/php/conf.d/z-php.dev.ini
     extra_hosts: #uncomment this section if you use linux and want run xdebug
@@ -25,25 +25,25 @@ services:
     environment:
       APPLICATION_ENV: development
       # xdebug
-      PHP_IDE_CONFIG: serverName=timesheet-docker
+      PHP_IDE_CONFIG: serverName=mirai-docker
       # for run phpunit only, see environment var needed in tests/bootstrap.php (search with keyword 'getenv')
       APP_SUBDOMAIN: localhost
-      TEST_DB_HOST: timesheet_db
-      TEST_DB_NAME: timesheet_unittest
+      TEST_DB_HOST: mirai_db
+      TEST_DB_NAME: mirai_unittest
 
-  timesheet_public:
-    working_dir: /var/www/html/timesheet/public
-    image: timesheet-nginx-builder
+  mirai_public:
+    working_dir: /var/www/html/mirai_test/public
+    image: mirai-nginx-builder
     build:
       target: nginx-builder
     volumes:
-      - ./public:/var/www/html/timesheet/public
-      - ./storage/app/public:/var/www/html/timesheet/storage/app/public
-      - .docker/nginx/conf.d/timesheet-app.conf:/etc/nginx/conf.d/default.conf
+      - ./public:/var/www/html/mirai_test/public
+      - ./storage/app/public:/var/www/html/mirai_test/storage/app/public
+      - .docker/nginx/conf.d/mirai-app.conf:/etc/nginx/conf.d/default.conf
       - .docker/nginx/nginx.conf:/etc/nginx/nginx.conf
 
-  timesheet_db:
-    container_name: timesheet_db
+  mirai_db:
+    container_name: mirai_db
     image: mysql:8.0.28
     cap_add:
       - SYS_NICE  # CAP_SYS_NICE
@@ -67,19 +67,19 @@ services:
     ports:
       - 3308:3306
     environment:
-      MYSQL_ROOT_PASSWORD: huypq29102001
-      MYSQL_DATABASE: timesheet
+      MYSQL_ROOT_PASSWORD: 12345678
+      MYSQL_DATABASE: mirai
       TZ: Asia/Tokyo
     volumes:
-      - data-mysql-timesheet:/var/lib/mysql:delegated
+      - data-mysql-mirai:/var/lib/mysql:delegated
 
   session_storage:
-    container_name: session_storage_timesheet
+    container_name: session_storage_mirai
     image: redis:6.2.5-alpine3.14
     restart: always
 
 # [ volumes definition ]
 # creates Docker volumes which can be mounted by other containers too e.g. for backup
 volumes:
-  data-mysql-timesheet:
+  data-mysql-mirai:
     driver: local

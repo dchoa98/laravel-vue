@@ -30,29 +30,18 @@ on-app: #sync-pre-commit ## On app without elastic search
 	sha_id=$$(git rev-parse --short HEAD);\
 	echo "$$branch_or_tag - $$sha_id" > VERSION
 
-on-app-prod: ## On app in production mode
-	@echo "List timesheet TAG image exits on your computer:"
-	@docker images --format "- {{.Tag}}" timesheet-app
-	@read -p "Run timesheet app with docker image TAG [latest]: " TAG; \
-	set -eux; \
-	docker-compose up -d timesheet_db; \
-	TAG=$${TAG:=latest} docker-compose \
-		-f docker-compose.yml \
-		-f docker-compose.prod.yml \
-		up -d;
-
 off-app: ## Off app without elastic search
 	uid=`id -u` gid=`id -g` docker-compose \
 	-f docker-compose.yml \
 	-f docker-compose.override.yml \
 	down
 
-build-prod: ## Docker build timesheet production image
+build-prod: ## Docker build mirai production image
 	@printf "To run in non-interactive mode please run command bellow:\n\t";\
-	printf "${TITLE_COLOR}TAG=timesheet_tag AWS_ACCOUNT_ID=your_aws_account make build-prod-fargate${NO_COLOR}\n";\
+	printf "${TITLE_COLOR}TAG=mirai_tag AWS_ACCOUNT_ID=your_aws_account make build-prod-fargate${NO_COLOR}\n";\
 	\
 	if [ -z "$$TAG" ]; then\
-		read -p "timesheet docker image TAG [`date +'%Y.%m.%d'`] TAG=" TAG;\
+		read -p "mirai docker image TAG [`date +'%Y.%m.%d'`] TAG=" TAG;\
 	fi;\
 	\
 	if [ -z "$$AWS_ACCOUNT_ID" ]; then\
@@ -67,8 +56,8 @@ build-prod: ## Docker build timesheet production image
 		--build-arg GIT_BRANCH_NAME=`git symbolic-ref -q --short HEAD || git describe --tags --exact-match`\
 		--build-arg GIT_COMMIT_HASH=`git rev-parse --short HEAD`;\
 	\
-	docker tag timesheet-public:$${TAG} $${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/timesheet-public:$${TAG};\
-	docker tag timesheet-app:$${TAG} $${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/timesheet-app:$${TAG};\
+	docker tag mirai-public:$${TAG} $${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/mirai-public:$${TAG};\
+	docker tag mirai-app:$${TAG} $${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/mirai-app:$${TAG};\
 
 docker-login: ## Docker login with aws credential (use to push docker image)
 	@if [ -z "$$AWS_ACCOUNT_ID" -o -z "$$AWS_ACCESS_KEY_ID" -o -z "$$AWS_SECRET_ACCESS_KEY" ]; then\
@@ -83,8 +72,8 @@ docker-push: ## Docker push faragte image. Make sure you run docker-login first
 		printf "To push coverage fargate image please run:\n";\
 		printf "${TITLE_COLOR}AWS_ACCOUNT_ID=x TAG=y make docker-push${NO_COLOR}\n";\
 	else\
-		docker push $${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/timesheet-public:$${TAG};\
-		docker push $${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/timesheet-app:$${TAG};\
+		docker push $${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/mirai-public:$${TAG};\
+		docker push $${AWS_ACCOUNT_ID}.dkr.ecr.ap-northeast-1.amazonaws.com/mirai-app:$${TAG};\
 	fi
 
 destroy-app: clean ## Cleanup tenant dir, run this on your personal computer only
@@ -97,49 +86,49 @@ composer-install-test-libraries: ## Composer install on tests directory
 	cd tests && composer install
 
 test: on-app## Run phpunit test app integration with database
-	docker exec -t timesheet_app tests/phpunit --no-coverage --testdox -c tests/phpunit.xml
+	docker exec -t mirai_app tests/phpunit --no-coverage --testdox -c tests/phpunit.xml
 
 test-library: on-app ## Run phpunit test library only - testdox
-	docker exec -t timesheet_app tests/phpunit --no-coverage --testdox -c tests/phpunit.lib.xml
+	docker exec -t mirai_app tests/phpunit --no-coverage --testdox -c tests/phpunit.lib.xml
 
-test-timesheet: on-app ## Measure test timesheet
-	docker exec -t -e XDEBUG_MODE=coverage timesheet_app tests/phpunit -d memory_limit=-1 -c tests/phpunit.xml
+test-mirai: on-app ## Measure test mirai
+	docker exec -t -e XDEBUG_MODE=coverage mirai_app tests/phpunit -d memory_limit=-1 -c tests/phpunit.xml
 
-clean-test-timesheet: ## Clean test timesheet results
-	rm -rf tests/timesheet
+clean-test-mirai: ## Clean test mirai results
+	rm -rf tests/mirai
 
-ssh-app: ## SSH into timesheet app container
-	docker exec -it timesheet_app sh
+ssh-app: ## SSH into mirai app container
+	docker exec -it mirai_app sh
 
-ssh-app-as-root: ## SSH into timesheet app container as root user
-	docker exec -it --user 0 timesheet_app sh
+ssh-app-as-root: ## SSH into mirai app container as root user
+	docker exec -it --user 0 mirai_app sh
 
-show-log-app: ## Show log timesheet app container
-	docker logs -f timesheet_app
+show-log-app: ## Show log mirai app container
+	docker logs -f mirai_app
 
-show-log-app-nginx: ## Show log timesheet nginx container
-	docker logs -f timesheet_public
+show-log-app-nginx: ## Show log mirai nginx container
+	docker logs -f mirai_public
 
 show-log-db: ## Show log mysql server container
-	docker logs -f timesheet_db
+	docker logs -f mirai_db
 
 # show-log-saml: ## Show log saml server - keycloak container
 # 	docker logs -f keycloak
 npm-run: ## Run NPM run in APP container
-	docker exec -t --user 0 timesheet_app npm run watch
+	docker exec -t --user 0 mirai_app npm run watch
 
 check-eslint: ## Run check eslint in source
-	docker exec -t --user 0 timesheet_app npm run eslint
+	docker exec -t --user 0 mirai_app npm run eslint
 
 
 composer-install: ## Run Composer install in APP container
-	docker exec -t timesheet_app composer install
+	docker exec -t mirai_app composer install
 
 npm-install: ## Run NPM install in APP container
-	rm -rf node_modules && docker exec -t --user 0 timesheet_app npm install
+	rm -rf node_modules && docker exec -t --user 0 mirai_app npm install
 
 up-db: ## Migrate database for all tenant
-	docker exec -t timesheet_app sh ./phinxMigrateForAllCustomer.sh
+	docker exec -t mirai_app sh ./phinxMigrateForAllCustomer.sh
 
 # clean: ## Remove all tenant dir, run this on your personal computer only
 # 	rm -rfv application/configs/*.application.ini;\
@@ -149,7 +138,7 @@ up-db: ## Migrate database for all tenant
 # 	rm -rfv ^application/modules/issue/views/scripts/searchbasic/multitenancy/.gitignore application/modules/issue/views/scripts/searchbasic/multitenancy/*
 
 # list-tenant: ## List all tenant name
-# 	@cd data/multitenancy && ls -1d * 2>/dev/null || printf '${TITLE_COLOR}Not found any tenant.\nPlease install timesheet app first.${NO_COLOR}\n'
+# 	@cd data/multitenancy && ls -1d * 2>/dev/null || printf '${TITLE_COLOR}Not found any tenant.\nPlease install mirai app first.${NO_COLOR}\n'
 
 #sync-pre-commit:
 #	cp tools/pre-commit .git/hooks/pre-commit
@@ -159,7 +148,7 @@ up-db: ## Migrate database for all tenant
 # 		[ ! -e $$application_ini ] && printf "${TITLE_COLOR}Firstly please install app /install.php after that run this task again.${NO_COLOR}\n" && continue ;\
 # 		dbname=$$(awk -F "=" "/resources.db.params.dbname/ {print \$$2}" $$application_ini  | tr -d " \"");\
 # 		printf "Turn off 2step login for db ${COMMAND_COLOR}$$dbname${NO_COLOR} founded in ${COMMAND_COLOR}$$application_ini${NO_COLOR}\n";\
-# 		docker-compose exec timesheet_db mysql -pcdmllove $$dbname -e "update crm_member set member_used_2auth=0 where member_id=1;";\
+# 		docker-compose exec mirai_db mysql -pcdmllove $$dbname -e "update crm_member set member_used_2auth=0 where member_id=1;";\
 # 	done
 #
 # vagrant-off-2step-login: ## Turn off 2 step login for vagrant develop env
